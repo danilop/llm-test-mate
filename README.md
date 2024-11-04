@@ -40,9 +40,11 @@ The test examples (`test_examples.py`) include:
 - Model comparison tests
 - Parameterized threshold testing
 
-Here's how to get you started using this tool:
+Here's how to get you started using this tool (`quickstart.py`):
 
 ```python
+import json
+
 from llm_test_mate import LLMTestMate
 
 # Initialize the test mate with your preferences
@@ -56,7 +58,19 @@ tester = LLMTestMate(
 reference_text = "The quick brown fox jumps over the lazy dog."
 generated_text = "A swift brown fox leaps above a sleepy canine."
 
+# Example: String similarity test using Damerau-Levenshtein distance
+print("1. String similarity test")
+result = tester.string_similarity(
+    reference_text,
+    generated_text,
+    threshold=0.4
+)
+
+print(f"Similarity score: {result['similarity']:.2f}")
+print(f"Passed threshold: {result['passed']}")
+
 # Simple similarity check using default settings
+print("2. Semantic similarity test")
 result = tester.semantic_similarity(
     generated_text, 
     reference_text
@@ -65,27 +79,37 @@ print(f"Similarity score: {result['similarity']:.2f}")
 print(f"Passed threshold: {result['passed']}")
 
 # LLM-based evaluation
-eval_result = tester.llm_evaluate(
+print("3. LLM-based evaluation")
+result = tester.llm_evaluate(
     generated_text,
     reference_text
 )
-print(f"Evaluation result: {eval_result}")
+print("Evaluation result:")
+print(json.dumps(result, indent=4))
 ```
 
 Sample output:
 ```
-Similarity score: 0.89
+1. String similarity test
+Similarity score: 0.42
 Passed threshold: True
-
-Evaluation result: {
+2. Semantic similarity test
+Similarity score: 0.79
+Passed threshold: False
+3. LLM-based evaluation
+Evaluation result:
+{
     "passed": true,
-    "similarity_score": 0.92,
+    "similarity_score": 0.85,
     "analysis": {
-        "semantic_match": "Both texts describe the same action of a fox jumping over a dog, using synonymous terms",
-        "content_match": "All key elements are present: fox (brown), jumping action, and dog (lazy/sleepy)",
+        "semantic_match": "Both sentences describe a brown fox performing an action over a dog. The overall meaning is very similar.",
+        "content_match": "The main elements (brown fox, action over dog) are present in both sentences. Minor differences in specific words used.",
         "key_differences": [
-            "Word choice: 'quick' vs 'swift'",
-            "Phrase structure: 'jumps over' vs 'leaps above'"
+            "Use of 'swift' instead of 'quick'",
+            "Use of 'leaps above' instead of 'jumps over'",
+            "Use of 'sleepy' instead of 'lazy'",
+            "Use of 'canine' instead of 'dog'",
+            "Absence of articles 'The' and 'the' in the generated text"
         ]
     },
     "model_used": "anthropic.claude-3-5-sonnet-20240620-v1:0"
