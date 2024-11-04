@@ -1,6 +1,6 @@
 # LLM Test Mate 🤝
 
-A simple testing framework for LLM-generated content. Makes it easy to evaluate and validate outputs from large language models using string similarity, semantic similarity, and LLM-based evaluation.
+A simple testing framework to evaluate and validate LLM-generated content using string similarity, semantic similarity, and LLM-based evaluation.
 
 ## 🚀 Features
 
