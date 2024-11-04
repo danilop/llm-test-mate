@@ -52,6 +52,31 @@ def main():
     print("Generated summary:", generated_summary)
     print("Evaluation result (Claude):", json.dumps(eval_result, indent=2))
 
+    # New Example: String similarity comparison
+    print("\n=== Example: String Similarity Test ===")
+    text1 = "The quick brown fox jumps over the lazy dog."
+    text2 = "The quikc brown fox jumps over the lasy dog."  # Intentional typos
+    print(f"Text 1: {text1}")
+    print(f"Text 2: {text2}")
+
+    string_result = default_tester.string_similarity(
+        text1,
+        text2,
+        threshold=0.9  # High threshold for string similarity
+    )
+    print(f"String similarity score: {string_result['similarity']:.2f}")
+    print(f"Edit distance: {string_result['distance']:.2f}")
+    print(f"Passed threshold: {string_result.get('passed', 'No threshold set')}")
+
+    # Compare all similarity methods
+    semantic_result = default_tester.semantic_similarity(text1, text2)
+    llm_result = default_tester.llm_evaluate(text1, text2)
+    
+    print(f"\nComparison of different similarity measures:")
+    print(f"String similarity: {string_result['similarity']:.2f}")
+    print(f"Semantic similarity: {semantic_result['similarity']:.2f}")
+    print(f"LLM similarity score: {llm_result['similarity_score']:.2f}")
+
     # Now switch to Llama model
     print("\n=== Testing with Llama Model ===")
     llama_tester = LLMTestMate(
@@ -109,6 +134,87 @@ def main():
     
     print("\nClaude evaluation:", json.dumps(claude_result, indent=2))
     print("\nLlama evaluation:", json.dumps(llama_result, indent=2))
+
+    # Comprehensive String Similarity Examples
+    print("\n=== String Similarity Examples ===")
+
+    # 1. Compare different methods with various text types
+    print("\n1. Comparing different similarity methods:")
+    test_pairs = [
+        ("John Smith", "Jon Smyth"),           # Name variation
+        ("Hello World", "Helo World"),         # Simple typo
+        ("The Quick Fox", "The Quick Fox"),    # Perfect match
+        ("Quick Fox", "The Quick Fox"),        # Different length
+        ("The quick brown fox", "The quikc brown fox")  # Transposed letters
+    ]
+
+    methods = ["damerau-levenshtein", "levenshtein", "hamming", "jaro", "jaro-winkler", "indel"]
+
+    for text1, text2 in test_pairs:
+        print(f"\nComparing: '{text1}' vs '{text2}'")
+        for method in methods:
+            result = default_tester.string_similarity(
+                text1,
+                text2,
+                method=method
+            )
+            print(f"{method:20}: {result['similarity']:.3f}")
+
+    # 2. Normalization options
+    print("\n2. Text normalization options:")
+    text1 = "Hello,  WORLD!"
+    text2 = "hello world"
+
+    normalization_tests = [
+        {"normalize_case": False, "normalize_whitespace": False, "remove_punctuation": False},
+        {"normalize_case": True, "normalize_whitespace": False, "remove_punctuation": False},
+        {"normalize_case": True, "normalize_whitespace": True, "remove_punctuation": False},
+        {"normalize_case": True, "normalize_whitespace": True, "remove_punctuation": True},
+    ]
+
+    for options in normalization_tests:
+        result = default_tester.string_similarity(
+            text1,
+            text2,
+            **options
+        )
+        print(f"\nOptions: {options}")
+        print(f"Similarity: {result['similarity']:.3f}")
+
+    # 3. Custom text processor
+    print("\n3. Custom text processor:")
+    def remove_special_chars(text: str) -> str:
+        return ''.join(c for c in text if c.isalnum() or c.isspace())
+
+    text1 = "Hello! @#$ World"
+    text2 = "Hello World"
+
+    result = default_tester.string_similarity(
+        text1,
+        text2,
+        processor=remove_special_chars
+    )
+    print(f"Original texts: '{text1}' vs '{text2}'")
+    print(f"Similarity with processor: {result['similarity']:.3f}")
+
+    # 4. Combined options example
+    print("\n4. Combined options:")
+    text1 = "Hello,  WORLD! @#$"
+    text2 = "hello world"
+    
+    result = default_tester.string_similarity(
+        text1,
+        text2,
+        method="damerau-levenshtein",
+        normalize_case=True,
+        normalize_whitespace=True,
+        remove_punctuation=True,
+        processor=remove_special_chars,
+        threshold=0.9
+    )
+    print(f"Original texts: '{text1}' vs '{text2}'")
+    print(f"Similarity with all options: {result['similarity']:.3f}")
+    print(f"Passed threshold: {result['passed']}")
 
 if __name__ == "__main__":
     main()

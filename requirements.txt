@@ -2,3 +2,4 @@ litellm
 sentence-transformers
 boto3
 pytest
+rapidfuzz

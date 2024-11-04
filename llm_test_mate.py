@@ -1,7 +1,16 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, Literal, Tuple
 from litellm import completion
 from sentence_transformers import SentenceTransformer
 import json
+from rapidfuzz import fuzz, utils
+from rapidfuzz.distance import (
+    DamerauLevenshtein, 
+    Levenshtein, 
+    Hamming, 
+    Jaro, 
+    JaroWinkler, 
+    Indel
+)
 
 class LLMTestMate:
     """
@@ -187,3 +196,90 @@ class LLMTestMate:
                 "raw_response": response.choices[0].message.content,
                 "model_used": response.model
             }
+
+    def string_similarity(
+        self,
+        text1: str,
+        text2: str,
+        threshold: Optional[float] = None,
+        normalize_case: bool = True,
+        normalize_whitespace: bool = True,
+        remove_punctuation: bool = True,
+        method: Literal["damerau-levenshtein", "levenshtein", "hamming", "jaro", "jaro-winkler", "indel"] = "damerau-levenshtein",
+        processor: Optional[callable] = None
+    ) -> Dict[str, Any]:
+        """
+        Calculate string similarity using various string distance metrics.
+        
+        Args:
+            text1: First text to compare
+            text2: Second text to compare
+            threshold: Optional threshold to override default
+            normalize_case: Whether to make comparison case-insensitive
+            normalize_whitespace: Whether to normalize whitespace
+            remove_punctuation: Whether to remove punctuation marks
+            method: Distance metric to use
+            processor: Optional function to pre-process strings before comparison
+            
+        Returns:
+            Dict with similarity score and pass/fail status
+        """
+        # Apply basic normalization
+        if normalize_case:
+            text1 = text1.lower()
+            text2 = text2.lower()
+            
+        if normalize_whitespace:
+            text1 = ' '.join(text1.split())
+            text2 = ' '.join(text2.split())
+            
+        if remove_punctuation:
+            text1 = ''.join(c for c in text1 if c.isalnum() or c.isspace())
+            text2 = ''.join(c for c in text2 if c.isalnum() or c.isspace())
+        
+        # Apply custom processor if provided
+        if processor:
+            text1 = processor(text1)
+            text2 = processor(text2)
+        
+        # Select distance metric
+        distance_funcs = {
+            "damerau-levenshtein": DamerauLevenshtein,
+            "levenshtein": Levenshtein,
+            "hamming": Hamming,
+            "jaro": Jaro,
+            "jaro-winkler": JaroWinkler,
+            "indel": Indel
+        }
+        
+        distance_func = distance_funcs[method]
+        
+        # Calculate distance
+        distance = distance_func.normalized_distance(text1, text2)
+        
+        # Convert distance to similarity
+        similarity = 1.0 - distance
+        
+        result = {
+            "similarity": similarity,
+            "distance": distance,
+            "method": method,
+            "normalized": {
+                "case": normalize_case,
+                "whitespace": normalize_whitespace,
+                "punctuation": remove_punctuation
+            },
+            "options": {
+                "processor": processor.__name__ if processor else None
+            }
+        }
+        
+        # Use instance threshold if none provided
+        if threshold is None:
+            threshold = self.similarity_threshold
+            
+        if threshold is not None:
+            result["passed"] = similarity >= threshold
+            result["threshold"] = threshold
+        
+        return result

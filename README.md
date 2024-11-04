@@ -1,9 +1,10 @@
 # LLM Test Mate 🤝
 
-A friendly testing framework for LLM-generated content. Makes it easy to validate outputs from large language models using semantic similarity and LLM-based evaluation.
+A simple testing framework for LLM-generated content. Makes it easy to evaluate and validate outputs from large language models using string similarity, semantic similarity, and LLM-based evaluation.
 
 ## 🚀 Features
 
+- 📝 String similarity testing using Damerau-Levenshtein distance
 - 📊 Semantic similarity testing using sentence transformers
 - 🤖 LLM-based evaluation of content quality and correctness
 - 🔧 Easy integration with pytest
@@ -233,7 +234,92 @@ def test_generated_content(tester):
 
 ## 🛠️ Advanced Usage
 
-### Combined Testing Approach
+### String Similarity Testing
+
+LLM Test Mate provides comprehensive string similarity testing with multiple methods and configuration options:
+
+1. Basic Usage:
+```python
+result = tester.string_similarity(
+    "The quick brown fox jumps over the lazy dog!",
+    "The quikc brown fox jumps over the lasy dog",  # Different punctuation and typos
+    threshold=0.9
+)
+```
+
+2. Available Methods:
+
+| Method | Best For | Description |
+|--------|----------|-------------|
+| damerau-levenshtein | General text | Handles transposed letters, good default choice |
+| levenshtein | Simple comparisons | Basic edit distance |
+| hamming | Equal length strings | Counts position differences |
+| jaro | Short strings | Good for typos in short text |
+| jaro-winkler | Names | Optimized for name comparisons |
+| indel | Subsequence matching | Based on longest common subsequence |
+
+3. Configuration Options:
+- `normalize_case`: Convert to lowercase (default: True)
+- `normalize_whitespace`: Standardize spaces (default: True)
+- `remove_punctuation`: Ignore punctuation marks (default: True)
+- `processor`: Custom function for text preprocessing
+- `threshold`: Similarity threshold for pass/fail (0-1)
+- `method`: Choice of similarity metric
+
+4. Example Usage:
+```python
+# Name comparison with Jaro-Winkler
+result = tester.string_similarity(
+    "John Smith",
+    "Jon Smyth",
+    method="jaro-winkler",
+    threshold=0.8
+)
+
+# Text with custom preprocessing
+def remove_special_chars(text: str) -> str:
+    return ''.join(c for c in text if c.isalnum() or c.isspace())
+
+result = tester.string_similarity(
+    "Hello! @#$ World",
+    "Hello World",
+    processor=remove_special_chars,
+    threshold=0.9
+)
+
+# Combined options
+result = tester.string_similarity(
+    "Hello,  WORLD!",
+    "hello world",
+    method="damerau-levenshtein",
+    normalize_case=True,
+    normalize_whitespace=True,
+    remove_punctuation=True,
+    processor=remove_special_chars,
+    threshold=0.9
+)
+```
+
+5. Result Dictionary:
+```python
+{
+    "similarity": 0.95,        # Similarity score (0-1)
+    "distance": 0.05,         # Distance score (0-1)
+    "method": "jaro-winkler", # Method used
+    "normalized": {           # Applied normalizations
+        "case": True,
+        "whitespace": True,
+        "punctuation": True
+    },
+    "options": {              # Additional options
+        "processor": "remove_special_chars"
+    },
+    "passed": True,           # If threshold was met
+    "threshold": 0.9         # Threshold used
+}
+```
+
+### Combined Testing Approach 🔄
 
 ```python
 def test_comprehensive_check(embedding_model):
@@ -351,7 +437,7 @@ your_project/
 │   ├── llm_test_mate.py    # Copy the file here
 │   ├── your_test_file.py   # Your LLM tests
 │   └── conftest.py         # Pytest fixtures
-├── dev-requirements.txt    # Add dependencies here
+├─ dev-requirements.txt    # Add dependencies here
 └── pytest.ini              # Optional pytest configuration
 ```
 
@@ -403,3 +489,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 - Built with [LiteLLM](https://github.com/BerriAI/litellm)
 - Uses [sentence-transformers](https://github.com/UKPLab/sentence-transformers)
+- String similarity powered by [RapidFuzz](https://github.com/maxbachmann/RapidFuzz)
