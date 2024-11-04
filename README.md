@@ -4,7 +4,7 @@ A simple testing framework for LLM-generated content. Makes it easy to evaluate 
 
 ## 🚀 Features
 
-- 📝 String similarity testing using Damerau-Levenshtein distance
+- 📝 String similarity testing using Damerau-Levenshtein distance and other methods
 - 📊 Semantic similarity testing using sentence transformers
 - 🤖 LLM-based evaluation of content quality and correctness
 - 🔧 Easy integration with pytest
